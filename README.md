@@ -64,8 +64,9 @@ an optimized presentation, not a storage or mutation format.
 - **Monokl** supplies AST-aware code evidence, code search, symbols,
   definitions, references, and precision metadata. Wisp must not duplicate its
   parser, AST cache, or code index.
-- **Michi** supplies token-efficient agent output (TOON, KV, hints, MCP result
-  assembly, truncation). Wisp uses it only at the output boundary.
+- **Michi** will supply token-efficient agent output (TOON, KV, hints, MCP
+  result assembly, truncation) after its first versioned release. Wisp does
+  not depend on an unpublished sibling checkout or a floating Git revision.
 - **Callisto** offers useful precedents and potentially reusable permissively
   licensed pieces for `gix`-backed VCS access and crash-safe writes. License
   compatibility must be checked before code reuse.

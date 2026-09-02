@@ -37,7 +37,7 @@ validation, cache invalidation, Git inspection, ranking, or response shaping.
 | `wisp-monokl` | Typed adapter over Monokl queries and precision metadata | model; Monokl public API |
 | `wisp-store` | SQLite/FTS schema, derived relationship graph, cache/invalidation metadata | model |
 | `wisp-context` | Context and impact compiler; source selection, evidence reduction, freshness decisions | artifacts, git, monokl, store |
-| `wisp-output` | Optional Michi-based TOON/KV/hints/MCP presentation conversion | model/context; Michi |
+| `wisp-output` | Optional TOON/KV/hints/MCP presentation conversion; Michi adapter after its release | model/context |
 | `wisp-service` | Optional workspace-scoped long-lived process, watcher, request coordination | context/output/store |
 | `wisp-cli` | Clap/CLI boundary, JSON input/output, human diagnostics | service or context/output |
 | `wisp-mcp` | MCP transport, tools/resources mapped directly to service/library calls | service/output |
@@ -299,8 +299,9 @@ wisp impact --paths src/retry/policy.rs --format json
 wisp verify workflow --scenario claude-spec_codex-plan --format json
 ```
 
-CLI JSON must be deterministic enough for snapshot/fixture tests. Human output
-uses `miette` diagnostics and Michi only after the typed operation completes.
+CLI JSON must be deterministic enough for snapshot/fixture tests. Initial human
+output uses `miette` diagnostics only after the typed operation completes. A
+Michi renderer is added only after Michi has a versioned, published release.
 
 ## MCP contract
 
@@ -321,7 +322,8 @@ Initial resources may expose read-only canonical artifact URIs, e.g.
 `wisp://workspace/<id>/artifact/SPEC-021` and a current status resource. The
 MCP result should contain both:
 
-- compact agent-facing content (Michi TOON/KV/hints where appropriate); and
+- compact agent-facing content (TOON/KV/hints through Michi where appropriate,
+  after that optional integration ships); and
 - complete typed `structuredContent` matching the library result.
 
 TOON is appropriate for uniform candidate lists such as symbols, files,
@@ -330,8 +332,13 @@ canonical JSON artifact or a mutation payload.
 
 ## Michi integration
 
-Wisp's domain operations produce types, not strings. `wisp-output` is an
-optional edge adapter that uses Michi for:
+Wisp's domain operations produce types, not strings. Michi is not published at
+the time of this design, so Wisp's initial CLI/API contract is deterministic
+JSON and ordinary human diagnostics. Wisp must not take a path dependency on a
+sibling checkout or a floating Git dependency merely to render output.
+
+After Michi has a versioned, published release, `wisp-output` may use it as an
+optional edge adapter for:
 
 - TOON list rendering for five or more uniform rows;
 - KV rendering for a single status/receipt;
@@ -340,7 +347,8 @@ optional edge adapter that uses Michi for:
 - MCP `CallToolResult` assembly with non-duplicated structured content.
 
 Wisp must never parse its own TOON output. The model, CLI, and MCP layers all
-operate from the same typed result before rendering.
+operate from the same typed result before rendering. Until that integration
+ships, MCP `structuredContent` and CLI JSON remain the portable output contract.
 
 ## Other ecosystem integration
 

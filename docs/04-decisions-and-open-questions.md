@@ -52,8 +52,11 @@ blocks initial implementation.
 
 ### D-006: Michi is an output adapter
 
-Wisp uses Michi to render compact TOON/KV/hints and MCP responses. Wisp domain
-operations work on typed values and canonical artifact persistence stays JSON.
+Wisp will use Michi to render compact TOON/KV/hints and MCP responses after
+Michi has a versioned, published release. Until then, Wisp uses deterministic
+JSON and basic human diagnostics; it does not depend on a sibling checkout or
+a floating Git revision. Wisp domain operations work on typed values and
+canonical artifact persistence stays JSON.
 
 **Consequences:** no TOON parser is needed inside Wisp's core and MCP can return
 both compact content and full structured content.

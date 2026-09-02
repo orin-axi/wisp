@@ -100,11 +100,14 @@ working core; it must not be the reason the core exists.
 - Monokl unavailable/error produces a useful artifact-only briefing with a
   typed `code_evidence_unavailable` gap rather than a fabricated answer.
 
-## Milestone 4 — Michi output and MCP surface
+## Milestone 4 — MCP surface and later Michi output integration
 
 ### Deliverables
 
-- `wisp-output` using Michi for TOON/KV/hints and structured MCP outcomes.
+- MCP outcomes with complete typed structured content and a basic deterministic
+  text renderer.
+- A Michi-backed TOON/KV/hints adapter only after Michi has a published,
+  versioned release compatible with Wisp's license and MSRV.
 - `wisp-mcp` tools/resources mapping one-to-one to library operations.
 - Tool schemas, mutation safeguards, and clear recovery hints.
 - Harness adapter examples for Claude, Codex, and a direct CLI fallback.
@@ -112,7 +115,8 @@ working core; it must not be the reason the core exists.
 ### Acceptance gates
 
 - Every MCP tool's `structuredContent` is equivalent to the CLI JSON result.
-- Text/TOON output is derived from the same typed result and never reparsed.
+- Text/TOON output, when TOON is enabled, is derived from the same typed result
+  and never reparsed.
 - Read-only MCP calls cause no canonical file, Git, or cache-write side effect
   beyond explicitly documented harmless read/access metadata.
 - A harness without MCP can run the matching CLI operation and obtain the same
