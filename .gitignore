@@ -1,0 +1,8 @@
+# Wisp derived state is always rebuildable from the workspace.
+.wisp/
+
+# Rust build output
+target/
+
+# macOS metadata
+.DS_Store
