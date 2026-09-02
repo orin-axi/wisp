@@ -100,14 +100,16 @@ working core; it must not be the reason the core exists.
 - Monokl unavailable/error produces a useful artifact-only briefing with a
   typed `code_evidence_unavailable` gap rather than a fabricated answer.
 
-## Milestone 4 — MCP surface and later Michi output integration
+## Milestone 4 — MCP surface and Michi output integration
 
 ### Deliverables
 
 - MCP outcomes with complete typed structured content and a basic deterministic
   text renderer.
-- A Michi-backed TOON/KV/hints adapter only after Michi has a published,
-  versioned release compatible with Wisp's license and MSRV.
+- A Michi-backed TOON/KV/hints adapter using the local sibling checkout during
+  coordinated development.
+- A release gate: Wisp is not published until Michi has a compatible,
+  versioned release suitable for a non-path dependency.
 - `wisp-mcp` tools/resources mapping one-to-one to library operations.
 - Tool schemas, mutation safeguards, and clear recovery hints.
 - Harness adapter examples for Claude, Codex, and a direct CLI fallback.
