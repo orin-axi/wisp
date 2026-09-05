@@ -1,0 +1,1 @@
+Can you do research and help write the specs? Codex is getting ahead of itself and coding away without specs, without tests, documentation, readme, architecture, etc. Like we have for callisto and michi
