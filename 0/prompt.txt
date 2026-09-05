@@ -1,0 +1,1 @@
+Are there things that go in lumen? michi? prism? All of these should have some level of docs in ~/Projects in their respective folders
