@@ -1,0 +1,3 @@
+Let’s think through all of this research and our goals with wisp and wisp+monokl.
+
+How should we think about both, what should we adjust in terms of their plans and specs? Output, internals, semantic modeling, performance, DX and UX
