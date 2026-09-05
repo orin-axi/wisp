@@ -1,0 +1,3 @@
+Do we feel good about the plan and readme docs for both repos? We want succinct, professional. Devoid of AI slop, wordy prose. Leaning on sections, sub-sections, bullets and sub-bullers. We favor using diagrams and charts when it adds value. You can see callisto and agent-plugins for examples.
+
+You can leverage our plugins/skills and agents. Agent teams with the most appropriate model and effort to keep cost down but get the highest affordable quality.
