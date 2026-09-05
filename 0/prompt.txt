@@ -1,0 +1,1 @@
+I think following the model of michi and lumen is best. Some core MIT and FSL right? we should keep wisp-contracts in the wisp repo. We don't need callisto to deal with cross repo ordering. that's on a human to keep track. We should be able to publish all michi first as it should not have any wisp dependencies.
