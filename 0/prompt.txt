@@ -1,0 +1,28 @@
+<task-notification>
+<task-id>a5f89f97c28d74865</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-gabe-Projects-wisp/b57e95d8-2376-4482-beca-d095c103becd/tasks/a5f89f97c28d74865.output</output-file>
+<status>completed</status>
+<summary>Agent "Write Monokl spec updates" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>Task done: Monokl spec updated per the six research tracks; Wisp untouched (the README change on disk is the parent's parallel work, not mine).
+
+**Created**
+- `docs/spec/08-library-session-api.md` (550 lines, 13 sections, no wrapped lines): `Workspace`/`Snapshot` split, no-cancellation rationale, `Change`/`FileContent`/`ChangeSummary`, the `FileIdx` prerequisite, `Scope::{Complete, Partial}` with reverse-closure ops returning `Unsupported`, lazy enrichers + `(durable, volatile)` fingerprint, the full batch `QueryRequest`/`QueryResponse`/`OpOutcome`/`BudgetReport` shape, `SymbolId` (SCIP grammar, `Global`/`Local` variants, impl convention, collision rule, unpackaged-workspace open question), `Provenance` + `provenance_is_current` acceptance criterion, per-edge precision with `EdgeTarget::{Resolved, Ambiguous, Unresolved}`, OCI `Digest`, `monokl-core`/`monokl-agent` split, `raw-api` feature, `orin-contracts` contents + licensing question, SCIP lossy boundaries, benchmark plan.
+
+**Changed**
+- `docs/spec/05-research-and-decisions.md`: new §15 (17 adopted decisions with primary-source cites, four corrections, one Aider note); inline conditional annotations on §2's and §11's tree-sitter cold-parse bullets; §4's 50k threshold reworded as unmeasured hypothesis.
+- `docs/spec/06-daemon-architecture.md` §3: gopls citation re-sourced to `internal/cache` in place.
+- `docs/spec/README.md`: 08 added to reading order; two Known-gaps bullets.
+- `ARCHITECTURE.md`: 50k sentence softened, new "Library API" subsection, "No cancellation" bullet.
+- `AGENTS.md`: two non-negotiables (no `Serialize` on core result types; no caps/truncation strings in core).
+
+**Decided differently from the brief**
+- Named the method `Snapshot::provenance_is_current(&amp;Provenance)` and kept `Snapshot::is_current(&amp;Workspace)` separate — track 01's R1 argued the "is my snapshot newest" question is distinct and cheaper.
+- Put `analysed: Vec&lt;Utf8PathBuf&gt;` inside `Scope::Partial` rather than only in `Provenance`, so scope carries its own file set.
+- §15 reconciles rather than reverses §2's earlier "don't adopt SCIP moniker grammar as a `FileIdx` replacement" — the grammar is adopted for the public identity string only.
+- Also edited 06 in place (not just recorded in 05), matching 05 §1's "fixes applied in this document" convention.
+
+Not committed.</result>
+<usage><subagent_tokens>416323</subagent_tokens><tool_uses>26</tool_uses><duration_ms>348660</duration_ms></usage>
+</task-notification>
