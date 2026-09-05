@@ -1,0 +1,1 @@
+Can we update the monokl and wisp specs accordingly? Do you have to do more research for industry examples, guidance, lessons learned? Academic research, etc before updating the two projects? I would suggest so.
