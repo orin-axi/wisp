@@ -1,0 +1,1 @@
+Can we update the licensing for michi and monokl? For michi consumers it's probably because we only had two consumers before but we shouldn't assume which consumers
