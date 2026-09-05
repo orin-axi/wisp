@@ -1,0 +1,3 @@
+One thing to keep in mind is that we don't necessary need to do CLI calls for monokl. The idea is to use the library directly too but point taken on the multiple calls. We can sort it out by also guiding the library API to suit our needs. If we need batch data for example.
+
+How could we enhance what we're planning for monokl to avoid performance problems with wisp
