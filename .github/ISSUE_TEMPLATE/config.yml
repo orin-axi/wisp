@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/orin-axi/wisp/security/policy
+    about: Do not open a public issue for anything exploitable — see SECURITY.md instead.
+  - name: Wisp Plugins (the agent ecosystem)
+    url: https://github.com/orin-dx/agent-plugins/issues
+    about: Issues with the weaver/scribe/navigator/smith plugins or the artifact schemas belong there.

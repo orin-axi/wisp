@@ -1,0 +1,47 @@
+# callisto configuration — see https://github.com/orin-dx/callisto
+#
+# Release order across the orin-axi repositories is human-tracked (Wisp D-024):
+# michi → wisp-contracts → monokl → wisp. Within this repository Callisto orders
+# the crates by their dependency graph.
+
+[changesets]
+dir = ".changeset"
+
+[cascade]
+mode = "out-of-range"
+bump-severity = "patch"
+peer-escalation = true
+
+# [[package-set]] globs match by package NAME, not directory path, so explicit
+# per-crate [[package]] blocks match by path. The workspace still carries
+# `publish = false`; these entries describe the intended publication surface and
+# take effect when that flag is lifted.
+
+# Permissive interchange layer (MIT). Published first; everything else depends on it.
+[[package]]
+match = "crates/wisp-contracts"
+publish-to = ["crates-io"]
+release-trigger = "changeset"
+
+[[package]]
+match = "crates/wisp-model"
+publish-to = ["crates-io"]
+release-trigger = "changeset"
+
+# FSL-1.1-MIT layer.
+[[package]]
+match = "crates/wisp-schema"
+publish-to = ["crates-io"]
+release-trigger = "changeset"
+
+[[package]]
+match = "crates/wisp-artifacts"
+publish-to = ["crates-io"]
+release-trigger = "changeset"
+
+[[package]]
+match = "crates/wisp-cli"
+publish-to = ["crates-io"]
+release-trigger = "changeset"
+
+# wisp-fixtures is test-only and never published.
