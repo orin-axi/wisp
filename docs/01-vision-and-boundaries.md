@@ -89,6 +89,8 @@ Artifact files are the interoperable baseline. A Codex, Claude, OpenCode, or oth
 
 ## 7. Context is compiled, not remembered
 
+The proposed [artifact-only handoff pilot](08-implementation-handoff-mvp.md) verifies one selected plan/spec chain before broader code-aware briefing. Its packet is source-backed context, not approval or a substitute for Smith's code inspection. Agent memory and transcripts are non-authoritative; conflicting artifacts go back to their owners instead of being resolved by newest-wins inference.
+
 The desired result is not "put all knowledge into context". It is:
 
 1. Identify the requested stage and its input artifact(s).

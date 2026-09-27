@@ -1,0 +1,5 @@
+[default]
+extend-ignore-identifiers-re = ["[0-9a-f]{16}", "sha256:[0-9a-f]+", "blake3:[0-9a-f]+"]
+
+[files]
+extend-exclude = ["*.snap", "*.stderr", "Cargo.lock", "schemas/*.json", "fixtures/*.json"]

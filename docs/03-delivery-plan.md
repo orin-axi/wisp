@@ -4,6 +4,10 @@
 
 Build the durable, portable path before the convenient path. The first useful release validates, persists, inspects, and joins canonical artifacts with Git and Monokl evidence. MCP exposes that core; it is not the reason the core exists.
 
+### Proposed artifact-only pilot
+
+The [implementation handoff MVP](08-implementation-handoff-mvp.md) is a proposed small proof before the code-aware M3 briefing. It would check an explicit plan/spec selection and produce a bounded, read-only JSON handoff for Smith. It requires its own reviewed spec, plan, consumer fixtures, and value experiment; it does not close M0–M3, replace their acceptance gates, or authorize a release. D-028 records the proposed sequence. D-029 separately proposes narrowing the Michi publication gate; until accepted, D-006 and the [build-and-release guide](07-build-and-release.md) still apply.
+
 ## 2. Milestone map
 
 ### 2.1 Overview
@@ -96,7 +100,7 @@ Two Monokl benchmarks are hard prerequisites rather than parallel work. The cold
 **Deliverables**
 
 - **Graph refold** — in-memory, link resolution from schema metadata, issues as non-fatal findings.
-- **`wisp-git`** — HEAD/tree/worktree fingerprints; one batched `git status` per workspace; path-filtered commit walks via `gix` or `callisto-vcs`; VCS trait with subprocess and `gix` implementations.
+- **`wisp-git`** — HEAD/tree/worktree fingerprints; one batched `git status` per workspace; path-filtered commit walks via `gix`; VCS trait with subprocess and `gix` implementations.
 - **`DeclaredPaths` and `PathSpec`** — per-type resolution from schema fields, `PathSpec::{File, Prefix}` so a module root is not intersected as if it were a file, one-hop `spec@1` inheritance from linking plans, and `NoPathsReason` feeding `Indeterminate`.
 - **`EvidenceFreshness`** — computed per link against `DeclaredPaths`, with one rev-walk per distinct `since` over unioned pathspecs.
 - **`wisp impact --closure direct|deep`** — `AffectedBy` on every edge.
@@ -172,6 +176,8 @@ Two Monokl benchmarks are hard prerequisites rather than parallel work. The cold
 - Service results equal one-shot results for the same snapshot.
 - **Memory bound benchmark.** Under saturating concurrent load across an `apply_change`, live revisions never exceed `1 + MAX_QUERY_THREADS`, asserted by the `live_leases` gauge, and RSS tracks that multiple of Monokl's per-index number rather than growing without bound. Monokl's stale-snapshot RSS benchmark supplies the per-index figure this multiplies.
 - No tokio worker calls into `monokl-core`, and no `spawn_blocking` call appears on the analysis path.
+
+D-032 proposes an additional gate: generated create, modify, delete, rename, configuration, and analyzer-version sequences should match a cold rebuild after each step. It is not an accepted M5 gate yet.
 
 ### 3.7 M6 — optional semantic retrieval
 

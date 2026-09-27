@@ -1,5 +1,7 @@
 # Wisp: Architecture and Contracts
 
+This is the target architecture, not an inventory of shipped crates. The proposed [implementation handoff MVP](08-implementation-handoff-mvp.md) adds a separate, read-only artifact operation to the current local foundation. It does not close the broader context-compiler, cache, Monokl, or release gates below.
+
 ## 1. System view
 
 Canonical inputs flow through one validation-and-compilation core; the CLI and MCP surfaces are thin renderings of the same typed result.
@@ -83,7 +85,7 @@ The library owns the behavior. The CLI and MCP must not reimplement artifact val
 | Paths | `camino` | Workspace-facing paths use UTF-8 path types consistently |
 | Hashes | `sha2` for artifacts, `blake3` for cache keys | OCI digest grammar `algorithm:hex`, always prefixed. `sha256:` for anything crossing a process boundary; `blake3:` allowed inside `.wisp/`. See D-009. |
 | Atomic I/O | `tempfile`, `fs2` | Same-directory temp write + rename; inter-process writer coordination |
-| Git objects/refs/walks | `gix` (or `callisto-vcs`, MIT/Apache-2.0) | Typed, in-process; preserve exact commit/tree IDs |
+| Git objects/refs/walks | `gix` | Typed, in-process; preserve exact commit/tree IDs |
 | Git worktree status | one `git status --porcelain=v2 -z --untracked-files=all` per workspace | `gix-status` is not yet a stabilization candidate; swap behind a trait when it is, with a benchmark |
 | FTS | `rusqlite` + FTS5, only when measured necessary | Prose-doc search is the only trigger. See D-011. |
 | CPU work | `rayon` | Independent CPU-bound collection/reduction only. Entered from a Wisp pool thread or the actor thread, never from a tokio worker or a `spawn_blocking` thread; nothing inside a rayon job calls `block_on` or `block_in_place`. See §7.3. |
@@ -303,7 +305,7 @@ pub enum NoPathsReason {
 
 ### 4.4 Cost
 
-One `status()` per workspace for the dirty set, and one bounded rev-walk per distinct `since` commit over the union of all links' pathspecs, bucketed per link afterwards. Callisto's `commits_since_with_pathspec` (`rev_walk(head).with_hidden(since)`) is the reference implementation and is permissively licensed.
+One `status()` per workspace for the dirty set, and one bounded rev-walk per distinct `since` commit over the union of all links' pathspecs, bucketed per link afterwards. This Git backend is planned; the current Callisto repository has no `callisto-vcs` crate or `commits_since_with_pathspec` API to reuse.
 
 ## 5. Monokl integration
 
@@ -330,6 +332,8 @@ A `wisp-service` holds one warm `Workspace`; one-shot CLI opens with `Lifetime::
 ### 5.3 Precision and scope are carried through
 
 Every code-backed claim carries Monokl's precision *and* scope. An `Exact` TypeScript resolver edge, a `Structural` Rust module-walk edge, and a `Partial`-scope symbol listing are three different kinds of evidence and are labeled as such. Wisp never upgrades confidence, and never presents a partial-scope answer as complete.
+
+Resolution is another axis. D-030 proposes carrying resolved, ambiguous, unresolved, and external outcomes with candidate identities and diagnostics. A ranking choice cannot turn an ambiguous candidate into a resolved target; the proposal also retains the producing operation, analyzer version/configuration, source digest, and scope on each code-backed pointer.
 
 ### 5.4 The budget seam
 
@@ -915,6 +919,8 @@ Two routes, so this item ranks above single-route peers. `precision` appears bot
 7. Three detail levels per code item: `Path`, `Skeleton` (signatures, fields, headers, module comments — Agentless's ~800-line form), `Full`. Degrade detail before dropping items.
 8. Never include raw chain-of-thought or private session content.
 
+D-033 proposes treating Git co-change and ownership as advisory ranking hypotheses only, never as code dependencies or impact proof. This is not a default selection signal yet.
+
 ### 9.4 Budget policy
 
 One global cap, per-category reserved floors, spillover from higher to lower priority. Evidence groups are atomic: a criterion's whole evidence set is included or dropped and recorded — partial coverage of a criterion buys little, and starving a category is the dominant failure mode. A relevance floor drops items even under budget; width elasticity of evidence utilization is negative, so padding to the budget dilutes. Fit each budgeted tier with a binary search over prefix length (rendering is monotone in it) at a documented tolerance rather than an exact fit.
@@ -922,6 +928,8 @@ One global cap, per-category reserved floors, spillover from higher to lower pri
 The truncation record is machine-readable and itemized. Models detect omitted content at roughly 70% F1 even in short contexts — a gap has no key to attend to — so anything omitted is stated.
 
 ### 9.5 End-to-end: `wisp brief implement`
+
+This section specifies the later code-aware M3 briefing, not the proposed `wisp handoff implement` artifact-only pilot. The pilot uses an explicit workspace-relative plan path and selected batch/task, has its own versioned JSON result, and neither scans unrelated artifacts nor opens Monokl or a cache. Do not expose a pilot packet as the full `Briefing` contract.
 
 The stages of `wisp brief implement --plan P --task T`, with the crate that owns each.
 
@@ -1051,7 +1059,7 @@ Three things the table says. **Monokl's cold open dominates the cold path and is
 
 ## 10. CLI contract
 
-Every automation-capable command supports `--format json`; text/TOON are presentation modes.
+The commands below describe the target CLI; the tracked PR stack contains no Rust workspace. Every future automation-capable command supports `--format json`; text/TOON are presentation modes.
 
 ```bash
 wisp artifact validate <candidate.json|-> --format json
@@ -1179,7 +1187,7 @@ Wisp never parses its own TOON output.
 
 | Project | Relationship |
 | --- | --- |
-| **Callisto** | `callisto-vcs` and `callisto-model` are `MIT OR Apache-2.0`; only `callisto-graph` and the root are AGPL. `commits_since_with_pathspec` and `ApplyPermit` are reusable as code. Wisp does not couple to release planning. |
+| **Callisto** | `callisto-model` is MIT and contains `ApplyPermit`. Current Git access uses subprocesses; there is no `callisto-vcs` crate or `commits_since_with_pathspec` API. Reuse patterns only after checking the actual API and license. Wisp does not couple to release planning. |
 | **Lumen** | Measures whether Wisp improves agent behavior — context size, cache affinity, tool-loop cycles, retries, cost. Wisp emits sanitized tracing; transcripts never enter canonical knowledge without consent and a separate provenance class. |
 | **Prism** | The quality gate. Two tiers: an intrinsic tier scoring emitted briefings directly against ground-truth changed lines (coverage, ranking, context efficiency, budget sweep — SWE-Explore's framing), and an extrinsic paired run (same harness with and without Wisp, ≥3 seeds, cost per solved task as the headline). See `docs/03-delivery-plan.md`. |
 | **oxc-react-docgen** | Optional domain adapter for React workspaces, with its own digests and diagnostics. Not a substitute for Monokl. |

@@ -86,17 +86,17 @@ flowchart TB
     style Contracts fill:#fed7aa,stroke:#ea580c,stroke-width:2px,color:#7c2d12
 ```
 
-`wisp-fixtures` is test-only and sits outside the graph; it depends on `wisp-model` alone.
+`wisp-fixtures` is test-only and sits outside the graph; it depends on `wisp-model` alone. The first five crates below exist only as local uncommitted work; a fresh checkout of this PR stack has README stubs, not a Rust workspace.
 
 | Crate | Status | Responsibility |
 | :--- | :--- | :--- |
-| `wisp-model` | shipping | IDs, DTOs, provenance, freshness. Depends on nothing else in the workspace. |
-| `wisp-schema` | shipping | Vendored, pinned JSON Schemas; draft-2020-12 validation. |
-| `wisp-artifacts` | shipping | Canonical path resolution, atomic persist, content hashing, local Git state. Also ahead of spec — see below. |
-| `wisp-cli` | shipping | `wisp artifact validate/persist/get/status`. JSON in, JSON out. |
-| `wisp-fixtures` | stub | Reserved for fixture JSON and black-box test helpers; holds only a stage marker constant today. |
+| `wisp-model` | local, uncommitted | IDs, DTOs, provenance, freshness. Depends on nothing else in the workspace. |
+| `wisp-schema` | local, uncommitted | Vendored, pinned JSON Schemas; draft-2020-12 validation. |
+| `wisp-artifacts` | local, uncommitted | Canonical path resolution, atomic persist, content hashing, local Git state. Also ahead of spec — see below. |
+| `wisp-cli` | local, uncommitted | `wisp artifact validate/persist/get/status`. JSON in, JSON out. |
+| `wisp-fixtures` | local stub, uncommitted | Reserved for fixture JSON and black-box test helpers; holds only a stage marker constant today. |
 | `wisp-contracts` | not started | Shared interchange vocabulary — `Digest`, `Provenance`, `CapabilityPrecision`, `SymbolId`, `BudgetReport` — `MIT`. A workspace member published from this repository at its own version (D-027). No schemas; those are vendored from Wisp Plugins (Milestone 0, D-010). |
-| `wisp-git` | not started | Fingerprints, one batched `git status`, path-filtered rev-walks via `gix`/`callisto-vcs` (Milestone 2, D-013). |
+| `wisp-git` | not started | Fingerprints, one batched `git status`, path-filtered rev-walks via `gix` (Milestone 2, D-013). |
 | `wisp-monokl` | not started | Adapter over `monokl-core`'s `Workspace`/`Snapshot`/batch API — library embed, no CLI adapter (Milestone 3, D-017). |
 | `wisp-store` | not started | Content-addressed brief cache; FTS only when measured necessary. No SQLite artifact graph (Milestone 2, D-011). |
 | `wisp-context` | not started | Briefing/impact compiler (Milestone 3). |
@@ -119,6 +119,6 @@ None of this is in WISP-001's scope: its non-goals explicitly exclude other arti
 ## Known gaps
 
 - **No fixtures in `wisp-fixtures`** — the fixture JSON files live under top-level `fixtures/` and are consumed directly by `wisp-cli`'s integration tests instead.
-- **WISP-001 is ungated** — its plan (`docs/projects/WISP-001.json`) hasn't been through `navigator:challenger`, and its spec hasn't been through `scribe:exit-gate`. See the decisions doc for the specific defects.
+- **WISP-001 is ungated** — no retained `scribe:gate-spec` spec verdict or `sentinel:gate` plan verdict is in the tracked repo. Use `navigator:plan` to challenge the plan; see the decisions doc for the specific defects.
 - **The five crate `moon.yml` files are cache-unsound for in-repo dependencies.** Each runs `cargo <cmd> -p <crate>` and declares no `inputs`, so moon hashes each project over its own directory alone and no `dependsOn` edge compensates. A change to `wisp-model` does not invalidate `wisp-cli`'s cached test, so `just` can report green over code it never compiled. This is a scaffold bug, not a polyrepo concern — it predates any sibling-repository question. The fix is a shared `.moon/tasks/rust.yml` whose task inputs name the workspace `Cargo.toml` and `Cargo.lock` alongside the project glob, with each crate declaring `language: rust` and inheriting from it.
 - **Two error-layer violations against [`docs/02` §12](docs/02-architecture-and-contracts.md).** `wisp-schema` derives `miette::Diagnostic` on `SpecValidationError` with `#[source_code]` and `#[label]` fields, though the domain layer is supposed to carry plain offsets and no rendering. `wisp-cli`'s `error_json` then hand-maintains a second code vocabulary that already disagrees with the derive's, emitting `schema_violation` where the derive says `wisp::schema::violation`; an MCP surface would need a third. Both fixes are M1 work: a `SchemaError` carrying `offset` and `len` as plain fields, and one transport diagnostic that CLI JSON, MCP, and Michi all read.

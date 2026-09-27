@@ -2,6 +2,8 @@
 
 Open items against the JSON spec and plan, found in review and not yet corrected there. Tracked here until each is fixed or explicitly accepted.
 
+The implementation and machine-readable artifacts discussed below are local uncommitted work, not part of this tracked PR stack.
+
 ## Status
 
 | Item | Type | Status | Fix |
@@ -9,7 +11,7 @@ Open items against the JSON spec and plan, found in review and not yet corrected
 | Criteria misattribution | Plan defect | Unresolved | T1 claims `["AC-001"]` only |
 | `wisp artifact status` scope creep | Plan defect | Shipped, uncovered by any criterion | Add an acceptance criterion for it retroactively |
 | Scope beyond non-goals | Plan defect | Shipped without a spec or gate | Reconcile under a new gated spec, or hold at `spec@1`-only until WISP-001 closes |
-| Binding gates never run | Gate | Outstanding | Run `scribe:exit-gate` on the spec and `navigator:challenger` on the plan |
+| Binding gates never run | Gate | Outstanding | Run `scribe:gate-spec`, challenge with `navigator:plan`, then verify the plan with `sentinel:gate` |
 
 ## Unresolved plan defects
 
@@ -25,4 +27,4 @@ Open items against the JSON spec and plan, found in review and not yet corrected
 
 ## Gate status
 
-No `verdict@1` exists anywhere in the repo. Per [`../../../PRINCIPLES.md`](../../../PRINCIPLES.md), `scribe:exit-gate` on the spec and `navigator:challenger` on the plan are binding before implementation, not optional. Both are outstanding, and the defects above are exactly what `navigator:challenger` checks for.
+No persisted `verdict@3` gate evidence exists in the tracked repo. Per [`../../../PRINCIPLES.md`](../../../PRINCIPLES.md), the spec and plan gates are required before implementation. Run `scribe:gate-spec` on the spec, use `navigator:plan` to challenge the plan, and use `sentinel:gate` for an independent plan verdict. The defects above remain outstanding until the artifacts and gate evidence are corrected.

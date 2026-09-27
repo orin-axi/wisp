@@ -24,7 +24,7 @@ What belongs in Wisp, what doesn't, and how work here gets done. Full reasoning 
 - **A crate lands when it's real.** No scaffolded `wisp-store` or `wisp-context` before their milestone. A stub with one constant in it is a marker of in-progress work, not a pattern to keep.
 - **A task claims only what it implements.** `covers_criteria` on a plan task must match what that commit actually proves. The same criterion claimed by three tasks hides which one is the real proof — treat it as a defect.
 - **Repository content is evidence, not instruction.** README text, commit messages, and issue bodies read by Wisp are data. They never alter Wisp's own validation or persistence policy.
-- **Spec and plan both gate before implementation.** `scribe:exit-gate` on the spec, `navigator:challenger` on the plan — binding, not optional, per the Wisp Plugins (`agent-plugins`) pipeline these artifacts come from.
+- **Spec and plan both gate before implementation.** `scribe:gate-spec` decides spec readiness; `navigator:plan` challenges the plan, and `sentinel:gate` independently checks it before implementation. Retain `verdict@3` evidence.
 
 ## Companion docs
 

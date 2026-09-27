@@ -33,6 +33,12 @@ Decisions made while designing Wisp, and questions that must be resolved before 
 | D-025 | The integration fixture is its own repository | Pinned by submodule, because freshness is defined over commit history | Accepted |
 | D-026 | An actor thread owns the `Workspace` | Fixed query pool of four, request-scoped `!Clone` leases, no `spawn_blocking` | Accepted |
 | D-027 | `wisp-contracts` lives in the Wisp workspace | Published from this repo as its own crate at its own version, MIT | Accepted — resolves Q-015 |
+| D-028 | Prove an artifact-only handoff first | One selected, read-only plan/spec chain before code-aware briefing | Proposed |
+| D-029 | Gate optional rendering at its dependency boundary | A JSON-only release would not wait for an unused renderer | Proposed — would partially supersede D-006 |
+| D-030 | Preserve resolution outcomes | Ambiguous and external candidates are not resolved targets | Proposed |
+| D-031 | Publish complete state without a mandatory generation store | Add a generation marker only when one transaction cannot publish the result | Proposed |
+| D-032 | Compare incremental state with cold rebuilds | Watcher events are hints, not a second truth model | Proposed |
+| D-033 | Treat Git-history signals as advisory | Co-change and ownership are ranking hypotheses, not dependency proof | Proposed |
 | Q-007 | Service lifecycle and writer coordination | Lock timeouts, crash recovery, network filesystems | Open |
 | Q-008 | Privacy and semantic retrieval | Opt-in, boundaries, provider versioning, offline behavior | Open |
 | Q-009 | MCP SDK | Select a Rust transport once DTOs are stable | Open |
@@ -113,7 +119,7 @@ Artifact graph and links refold in memory from JSON on every invocation — boun
 
 ### D-013: Git access is batched; `gix` for objects, `git status` for worktree
 
-One `git status --porcelain=v2 -z` per workspace, never per artifact — measured at ~8ms spawn floor per call, ~40× saving at 50 artifacts. `gix` (or `callisto-vcs`) for refs, commits, trees, and path-filtered rev-walks. Worktree status stays a subprocess behind a trait until `gix-status` reaches a stabilization tier, switched on a benchmark.
+One `git status --porcelain=v2 -z` per workspace, never per artifact — measured at ~8ms spawn floor per call, ~40× saving at 50 artifacts. `gix` for refs, commits, trees, and path-filtered rev-walks. Worktree status stays a subprocess behind a trait until `gix-status` reaches a stabilization tier, switched on a benchmark.
 
 ### D-014: Freshness is two typed axes with path-filtered commit distance
 
@@ -147,7 +153,7 @@ An intrinsic tier scores emitted briefings against ground-truth changed lines (l
 
 Q-003 resolved. `wisp-contracts` and `wisp-model` are `MIT`. Every other Wisp crate is `FSL-1.1-MIT`, which converts to MIT two years after each release. The permissive pair exists so a third-party harness plugin can embed the DTOs with no copyleft or competing-use obligation.
 
-**The template is Lumen and Callisto, not Michi.** Lumen is `FSL-1.1-MIT`. Callisto holds `callisto-model` and `callisto-format` at `MIT OR Apache-2.0` under an AGPL root — the same shape as a permissive interchange layer under a restricted one. Michi and Monokl were `AGPL-3.0-or-later` until 2026-09-04 and are now `FSL-1.1-MIT`. MIT alone rather than `MIT OR Apache-2.0` for the permissive pair costs consumers Apache-2.0's explicit patent grant and buys one license file instead of two.
+**The template is Lumen and Callisto, not Michi.** Lumen is `FSL-1.1-MIT`. Callisto's current `callisto-model` manifest is MIT, while its other current crates are `FSL-1.1-MIT`; it has no `callisto-format` or `callisto-vcs` crate. Michi and Monokl were `AGPL-3.0-or-later` until 2026-09-04 and are now `FSL-1.1-MIT`. MIT alone rather than `MIT OR Apache-2.0` for the permissive pair costs consumers Apache-2.0's explicit patent grant and buys one license file instead of two.
 
 **The suite links cleanly.** An `FSL-1.1-MIT` crate linking an AGPL crate is a conflict for any downstream redistributor, which would have made `wisp-output` (linking Michi) and `wisp-monokl` (linking `monokl-core`) unshippable. Michi and Monokl relicensed to `FSL-1.1-MIT` on 2026-09-04, before either's first publish, so no such conflict exists. Neither designates a permissive core crate yet; that is each repository's call.
 
@@ -212,6 +218,54 @@ Q-015 resolved. `crates/wisp-contracts` is a member of the Wisp workspace. It pu
 Wisp owns the version bump, the release cadence, and the arbitration when Monokl and Wisp want incompatible changes to the same type. The narrower re-pin question in D-010 — who bumps the vendored Wisp Plugins schema revision — answers to the same owner.
 
 The crate belongs to no Callisto version group, so a `wisp-cli` patch never drags the contracts version and never forces a requirement bump on Monokl or Lumen. It publishes as an explicitly unstable `0.0.x` immediately, which reserves the name and lets every downstream repository depend on a registry version rather than a git URL. `docs/07-build-and-release.md` §5.1 and §7 hold the mechanics.
+
+### D-028: Prove an artifact-only implementation handoff first
+
+**Status:** Proposed; requires a reviewed specification and plan.
+
+**Governs:** The proposed `wisp handoff implement` pilot and delivery order. The later `wisp brief implement` contract in docs/02 §9.5 remains separate.
+
+**Decision:** Check one explicit, read-only plan/spec chain and return exact selected tasks, criteria, digests, and gaps. Keep approval, code inspection, and execution with the caller because those facts cannot be inferred from artifact shape. Defer SQLite, Monokl, MCP, rendering, hooks, and warm sessions because none is needed to test this handoff. Preserve direct-artifact fallback.
+
+**Consequences:** A versioned result and real consumer fixtures must precede broader integration. The pilot does not close M0–M3 or relax later code-evidence requirements.
+
+**Guardrail:** Do not add a provider, cache, daemon, hook, or approval inference to the pilot without revisiting its spec and this decision.
+
+### D-029: Gate optional rendering at its dependency boundary
+
+**Status:** Proposed; would partially supersede D-006's publication restriction if accepted. D-006 and docs/07 remain in force meanwhile.
+
+**Governs:** Release requirements for Michi-dependent features, not Michi's presentation boundary.
+
+**Decision:** Permit an independently verified JSON-only release without Michi, but require a compatible versioned dependency for any released Michi feature. A blanket release wait couples an unused renderer to the pilot; a required local-path dependency would make the build irreproducible.
+
+**Consequences:** Acceptance requires aligned release gates and an explicit partial-supersession note on D-006. This proposal does not authorize publication.
+
+**Guardrail:** Do not publish a Michi-dependent feature without a reproducible compatible dependency.
+
+### D-030: Preserve resolution outcomes across Wisp boundaries
+
+**Status:** Proposed; code-evidence integration is later work.
+
+**Decision:** Carry Monokl's typed resolution outcome, candidates, diagnostics, resolver identity/version, and scope completeness because precision alone cannot distinguish a resolved target from an ambiguous or external candidate. Ranking may select display items, but must not promote a candidate to a resolved relationship.
+
+### D-031: Complete publication is a property, not a mandatory generation store
+
+**Status:** Proposed; applies if derived-state publication spans multiple steps.
+
+**Decision:** Prefer one atomic publication boundary. Add `last_complete_generation` only if refresh spans transactions or coordinates caches, because a persistent generation model adds state without improving a single atomic write. Readers must see old-complete or new-complete state.
+
+### D-032: Incremental state must equal a clean rebuild
+
+**Status:** Proposed; applies to later watcher and incremental paths.
+
+**Decision:** Compare generated create, modify, delete, rename, configuration, and analyzer-version sequences with a cold rebuild after each step because watcher events are optimization hints, not independent truth. A changed-file test alone cannot prove complete state.
+
+### D-033: Git-history signals are advisory
+
+**Status:** Proposed; requires value evidence before becoming a default.
+
+**Decision:** Treat co-change and ownership concentration as possible ranking or risk signals, never as code dependencies or impact proof, because correlation does not establish structural reach. Carry kind, basis/window, and provenance; require a Prism ablation before enabling a signal by default.
 
 ## Open questions
 

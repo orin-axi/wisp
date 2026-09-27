@@ -6,14 +6,10 @@ Architecture, invariants, and task-runner workflows for agents (Claude, Codex, C
 
 | Command | Does |
 | :--- | :--- |
-| `just` / `just ci-fast` (default) | fmt-check + lint + test + audit + doc-check. Use this before every commit. |
-| `just ci` | Same as `ci-fast` for now — no coverage step yet. |
-| `just test` / `moon run :test` | Run the full workspace test suite. |
-| `just lint` / `moon run :lint` | `cargo clippy --workspace --all-targets -- -D warnings`. |
-| `just fmt` / `moon run :format` | Format code. |
-| `just docs-lint` | Markdown house-style check: filler words, fences, D-/Q- references, stale names. Run this instead of ad-hoc `rg`/`awk` pipelines — it is allowlisted; they are not. |
+| `just` / `just ci` (default) | Run the current docs-only CI check. |
+| `just docs-lint` | Check Markdown house style, fences, decision references, and stale names. |
 
-For scoped iteration use `cargo test -p <crate>` / `cargo clippy -p <crate>`, not `moon run <project>:test` — moon's per-project fan-out serializes on the shared `target/` build lock.
+The tracked branch has no Rust workspace or Moon configuration. Add Rust checks to `just ci` and CI when the workspace is committed; do not treat docs-only CI as code verification. For local untracked Rust work, use Cargo directly and report those results separately.
 
 ## Architecture
 
@@ -33,7 +29,7 @@ Full picture, crate status, and current gaps: [`ARCHITECTURE.md`](ARCHITECTURE.m
 2. **Atomic writes only.** Every canonical artifact write goes through a same-directory tempfile + rename. Never write a canonical target in place.
 3. **The cache is never the authority.** Nothing in `.wisp/` may be the only copy of a fact — see `PRINCIPLES.md`.
 4. **Implement only what the current gated plan's `covers_criteria` requires.** A spec's `non_goals` are binding, not aspirational. If a task looks like it needs scope the spec excludes, stop and raise it — don't implement it and explain later. This bit us on WISP-001: `wisp-artifacts` shipped multi-artifact-type discovery and context assembly, explicitly excluded by that spec's non-goals, before anyone gated it. See `docs/spec/WISP-001/02-decisions.md`.
-5. **Spec and plan both gate before implementation.** `scribe:exit-gate` on the spec, `navigator:challenger` on the plan. No `verdict@1` on file means the gate hasn't run — treat the plan as provisional.
+5. **Spec and plan both gate before implementation.** Use `scribe:gate-spec` for the spec, `navigator:plan` to challenge the plan, and `sentinel:gate` for an independent plan verdict. Without persisted `verdict@3` evidence, treat a claimed gate pass as unverified.
 6. **A plan task claims only the criteria it implements.** Don't list `covers_criteria` for work a later task actually does.
 7. **Every crate ships a README, and every new crate lands with its own.** State what it does, what depends on it, and its current status (stub / in progress / shipping).
 8. **No emoji in docs or code comments.** Keep it technical and scannable.

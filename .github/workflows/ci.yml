@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install just
+        uses: extractions/setup-just@v2
+
+      - name: Install ripgrep (used by just docs-lint)
+        run: sudo apt-get update -q && sudo apt-get install -y -q ripgrep
+
+      - name: Run CI pipeline
+        run: just ci

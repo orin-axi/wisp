@@ -4,7 +4,7 @@
 
 *Makes a repository's durable project knowledge usable without relying on a conversation's context window.*
 
-**Status:** local WISP-001 vertical slice in progress; not published.
+**Status:** documentation and repository setup are tracked; the local WISP-001 Rust slice is uncommitted and not published.
 
 ---
 
@@ -21,9 +21,9 @@ Wisp joins four kinds of evidence into one bounded, cited answer:
 
 Wisp is not an agent runtime, a replacement for Git, a code parser, or an opaque "AI memory" product. It is a library with a CLI first and an MCP server as a thin later surface. Its job is to answer evidence-backed project questions and prepare a small, relevant context package for a particular stage of work.
 
-## Available local commands
+## Local implementation, not in this PR stack
 
-The first implemented slice deliberately covers only portable `spec@1` JSON artifacts. All success and failure responses are one deterministic JSON object on standard output.
+The uncommitted WISP-001 slice covers portable `spec@1` JSON artifacts. These commands are not available from a fresh checkout of this PR stack. Its success and failure responses are one JSON object on standard output.
 
 ```text
 wisp artifact validate <candidate.json|->
@@ -56,7 +56,11 @@ Git-tracked artifacts + Git state + Monokl code evidence
 - If `.wisp/` is deleted, Wisp must be able to reconstruct it from the workspace.
 - If Wisp is absent, a harness must still be able to read the documented JSON artifacts directly and carry out the portable baseline workflow.
 
-## The intended user experience
+## Next bounded pilot (proposed)
+
+[Implementation handoff MVP](docs/08-implementation-handoff-mvp.md) proposes a read-only, artifact-only `wisp handoff implement` operation. It checks one selected plan/spec chain and returns exact tasks, criteria, source digests, and gaps. It does not implement the broader context compiler, grant approval, or query Monokl. The brief is not a gated spec or an implemented command.
+
+## Later briefing experience
 
 ```text
 Claude / Codex / OpenCode / a human
@@ -69,7 +73,7 @@ Claude / Codex / OpenCode / a human
   + affected symbols/tests + current Git delta + next actions
 ```
 
-The same capability will eventually be exposed as an MCP tool such as `wisp_brief`. The CLI JSON result is the primary contract; TOON/KV rendering is an optimized presentation, not a storage or mutation format.
+The full `wisp brief implement` flow above is a later M3 target with code evidence and budgeting; it is not the pilot command. It may eventually be exposed as an MCP tool such as `wisp_brief`. CLI JSON remains the portable contract; TOON/KV is presentation, not storage.
 
 ## Reading order
 
@@ -78,10 +82,11 @@ The same capability will eventually be exposed as an MCP tool such as `wisp_brie
 | 1 | [Vision and boundaries](docs/01-vision-and-boundaries.md) | What Wisp is and is not |
 | 2 | [Architecture and contracts](docs/02-architecture-and-contracts.md) | The full contract: crates, evidence model, persistence, MCP |
 | 3 | [Delivery plan and acceptance gates](docs/03-delivery-plan.md) | Milestones 0–6 and what closes each |
-| 4 | [Decision log and open questions](docs/04-decisions-and-open-questions.md) | D-001 through D-027; Q-007 onward still open |
+| 4 | [Decision log and open questions](docs/04-decisions-and-open-questions.md) | Accepted D-001 through D-027; proposed D-028 through D-033 |
 | 5 | [Ten-phase build sequence](docs/05-ten-phase-build-plan.md) | Codex's finer-grained ordering within the milestones above |
 | 6 | [Research brief](docs/06-research-brief.md) | The prior art and papers behind D-009 through D-021 |
 | 7 | [Build and release](docs/07-build-and-release.md) | How six separate repositories resolve, build, and publish in dependency order |
+| 8 | [Implementation handoff MVP](docs/08-implementation-handoff-mvp.md) | Proposed artifact-only pilot and its failure cases |
 
 | Also | Covers |
 | :--- | :--- |
@@ -96,11 +101,11 @@ The same capability will eventually be exposed as an MCP tool such as `wisp_brie
 | Project | Role | Boundary |
 | :--- | :--- | :--- |
 | **Monokl** | AST-aware code evidence: code search, symbols, definitions, references, precision metadata | Wisp must not duplicate its parser, AST cache, or code index |
-| **Michi** | Token-efficient agent output: TOON, KV, hints, MCP result assembly, truncation | `git` + `rev` dependency during coordinated development (D-024). The dependency runs one way — Michi links nothing in Wisp, and `wisp-output` converts into Michi's own rendering types (D-006) |
-| **Callisto** | Precedents and reusable permissively licensed pieces for `gix`-backed VCS access and crash-safe writes | License compatibility must be checked before code reuse |
+| **Michi** | Token-efficient agent output: TOON, KV, hints, MCP result assembly, truncation | `git` + `rev` dependency during coordinated development (D-024). The pilot has no Michi dependency; D-029 proposes narrowing D-006's current publication gate, but does not change it yet. |
+| **Callisto** | Precedents for capability-gated writes and outcome-based receipts | Its current Git access uses subprocesses; check API and license compatibility before code reuse |
 | **Lumen** | Observes agent sessions, cache use, and retrieval loops | An evaluation/telemetry companion, never project truth |
 | **Prism** | Evaluates whether Wisp context improves task success, correctness, latency, and cost across harnesses | The quality gate, not a source of project state |
-| **Wisp Plugins** (`agent-plugins`) | The ten-plugin agent ecosystem: source of the versioned artifact schemas Wisp validates, and of the `scribe:exit-gate` / `navigator:challenger` gates its own specs and plans pass through | Schemas are vendored into Wisp at a pinned revision with a checksum, never read from a mutable sibling checkout (D-010) |
+| **Wisp Plugins** (`agent-plugins`) | The agent ecosystem: source of the versioned artifact schemas Wisp validates and of its spec/plan review workflows | Schemas are vendored into Wisp at a pinned revision with a checksum, never read from a mutable sibling checkout (D-010) |
 
 See [Architecture and contracts](docs/02-architecture-and-contracts.md) for the precise boundaries.
 
