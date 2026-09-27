@@ -6,9 +6,10 @@ This repository follows the centralized agent guidelines in [`AGENTS.md`](AGENTS
 
 | Command | Does |
 | :--- | :--- |
-| `just` (default) | fmt-check + lint + test + audit + doc-check. Run before every commit. |
-| `just test` / `just lint` / `just fmt` | Scoped equivalents. |
-| `cargo test -p <crate>` / `cargo clippy -p <crate>` | One crate — use these directly, not `moon run <project>:test`. |
+| `just` / `just ci` (default) | Current docs-only check. |
+| `just docs-lint` | Markdown house-style check. |
+
+The Rust workspace is not tracked yet. Use Cargo directly for local Rust work and do not describe the docs-only check as code verification.
 
 ## Top invariants
 

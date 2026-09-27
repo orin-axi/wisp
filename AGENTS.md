@@ -6,14 +6,10 @@ Architecture, invariants, and task-runner workflows for agents (Claude, Codex, C
 
 | Command | Does |
 | :--- | :--- |
-| `just` / `just ci-fast` (default) | fmt-check + lint + test + audit + doc-check. Use this before every commit. |
-| `just ci` | Same as `ci-fast` for now — no coverage step yet. |
-| `just test` / `moon run :test` | Run the full workspace test suite. |
-| `just lint` / `moon run :lint` | `cargo clippy --workspace --all-targets -- -D warnings`. |
-| `just fmt` / `moon run :format` | Format code. |
-| `just docs-lint` | Markdown house-style check: filler words, fences, D-/Q- references, stale names. Run this instead of ad-hoc `rg`/`awk` pipelines — it is allowlisted; they are not. |
+| `just` / `just ci` (default) | Run the current docs-only CI check. |
+| `just docs-lint` | Check Markdown house style, fences, decision references, and stale names. |
 
-For scoped iteration use `cargo test -p <crate>` / `cargo clippy -p <crate>`, not `moon run <project>:test` — moon's per-project fan-out serializes on the shared `target/` build lock.
+The tracked branch has no Rust workspace or Moon configuration. Add Rust checks to `just ci` and CI when the workspace is committed; do not treat docs-only CI as code verification. For local untracked Rust work, use Cargo directly and report those results separately.
 
 ## Architecture
 

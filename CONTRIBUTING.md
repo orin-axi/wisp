@@ -8,24 +8,21 @@ Contributions are welcome. This guide covers the development environment, the in
 
 ### Prerequisites
 
-- **Toolchain via proto**: `.prototools` pins Rust, moon, just, and cargo-deny. Run `proto use` once.
-- **Rust**: 1.96, edition 2024, pinned in `rust-toolchain.toml`.
-- **Preferred CLI tools**: `rg`, `fd`, `eza`, `bat`.
+- **Docs checks**: install `just` and `rg`.
+- **Rust**: the local WISP-001 slice uses Rust 1.96 and edition 2024, but its workspace and toolchain pin are not tracked on this branch.
 
 ### Build and test
 
 ```bash
-just            # fmt-check + lint + test + audit + doc-check + docs-lint — run before every commit
-just test       # workspace tests
-just lint       # clippy, -D warnings
-just docs-lint  # markdown house style: filler words, fences, D-/Q- references, stale names
+just            # current docs-only CI check
+just docs-lint  # Markdown house style, fences, decision references, stale names
 ```
 
-For one crate use `cargo test -p <crate>` or `cargo clippy -p <crate>` directly, not `moon run <project>:test` — moon's per-project fan-out serializes on the shared `target/` build lock.
+For local untracked Rust work, run Cargo checks directly. Add the workspace and its checks together when WISP-001 is committed; a passing docs check does not validate code.
 
 ### Before opening a PR
 
-CI runs `just ci`. Run it locally first; it is the same pipeline.
+CI runs `just ci`. Run it locally first; it currently checks tracked documentation only.
 
 ---
 
@@ -47,6 +44,6 @@ The full list, with the reasons, is in [`AGENTS.md`](./AGENTS.md).
 
 1. **Branch** with a descriptive name: `feat/…`, `fix/…`, `docs/…`, `chore/…`.
 2. **Tests prove criteria.** Every task's tests name the acceptance criteria they cover; mutation testing (`cargo-mutants`) checks the tests would catch real faults.
-3. **Verify locally** with `just ci`.
+3. **Verify locally** with `just ci` and any checks needed for changed code. Expand CI when that code enters the repository.
 4. **Conventional commits**: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`. The message explains why; the diff already shows what.
 5. **Cross-repo dependencies** on Monokl and Michi are `git` + `rev` in committed manifests. A local `[patch]` for path development lives in gitignored `.cargo/config.toml` and never in a commit — see [`docs/07-build-and-release.md`](./docs/07-build-and-release.md).
