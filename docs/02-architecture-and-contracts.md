@@ -2,6 +2,8 @@
 
 ## System view
 
+This is the target architecture, not an inventory of implemented capabilities. The current working tree contains model, schema, artifact, CLI, and fixture crates. The [implementation handoff MVP](05-implementation-handoff-mvp.md) adds one read-only operation to those layers before any database, Monokl adapter, or service is required.
+
 ```text
                          canonical inputs
  ┌───────────────────────────────────────────────────────────────────┐
@@ -23,8 +25,7 @@
                                                     JSON/TOON          MCP result
 ```
 
-The library owns the behavior. The CLI and MCP must not reimplement artifact
-validation, cache invalidation, Git inspection, ranking, or response shaping.
+The library owns the behavior. The CLI and MCP must not reimplement artifact validation, cache invalidation, Git inspection, ranking, or response shaping.
 
 ## Proposed workspace crates
 
@@ -43,8 +44,7 @@ validation, cache invalidation, Git inspection, ranking, or response shaping.
 | `wisp-mcp` | MCP transport, tools/resources mapped directly to service/library calls | service/output |
 | `wisp-fixtures` | Fixture workspaces, contract fixtures, integration/evaluation helpers | test-only |
 
-`wisp-model` is deliberately boring and stable. It must not depend on Tokio,
-MCP transport types, Monokl implementation types, SQLite, or CLI formatting.
+`wisp-model` is deliberately boring and stable. It must not depend on Tokio, MCP transport types, Monokl implementation types, SQLite, or CLI formatting.
 
 ## Recommended implementation crates
 
@@ -56,6 +56,7 @@ MCP transport types, Monokl implementation types, SQLite, or CLI formatting.
 | CLI diagnostics | `miette` | CLI boundary only; never the MCP data contract |
 | Paths | `camino` | Workspace-facing paths use UTF-8 path types consistently |
 | Hashes | `blake3` | Hash raw persisted bytes when a contract requires a content hash |
+| Artifact handoff hashes | SHA-256 | Current receipts use SHA-256; the pilot verifies `sha256:<hex>` over exact source bytes and does not reinterpret another algorithm as SHA-256 |
 | Atomic I/O | `tempfile`, `fs2` | Temp-write/rename and inter-process writer coordination |
 | Git | `gix` | Use typed/in-process Git operations; preserve exact commit/tree IDs |
 | Relational/FTS | `rusqlite` + SQLite FTS5 | Local-first, synchronous core, single-writer aware |
@@ -65,9 +66,7 @@ MCP transport types, Monokl implementation types, SQLite, or CLI formatting.
 | Filesystem watch | `notify` | Service phase only, never required for correctness |
 | Snapshot/property tests | `insta`, `proptest` | Verify deterministic render and graph/invalidation invariants |
 
-Avoid an async database abstraction until Wisp becomes a real networked service.
-Avoid a persistent code-search engine because Monokl already owns code search.
-Avoid a vector dependency in the initial build.
+Avoid an async database abstraction until Wisp becomes a real networked service. Avoid a persistent code-search engine because Monokl already owns code search. Avoid a vector dependency in the initial build.
 
 ## Monokl integration
 
@@ -87,37 +86,31 @@ Wisp owns cross-domain relevance:
 - enforcing artifact links, hashes, and freshness;
 - compiling a bounded briefing with provenance.
 
-Wisp must not copy Monokl's AST data into SQLite as a rival code index. It may
-store stable pointers to a Monokl result—workspace fingerprint, code content
-hash, symbol identity/path/range, operation, precision, and query parameters—
-when doing so accelerates a derived impact or briefing query.
+Wisp must not copy Monokl's AST data into SQLite as a rival code index. It may store stable pointers to a Monokl result—workspace fingerprint, code content hash, symbol identity/path/range, operation, precision, resolution outcome, `Provenance.agent` (`AnalyzerId`), `Provenance.activity` (`OperationId`), and query parameters— when doing so accelerates a derived impact or briefing query.
 
 ### Integration phases
 
-1. **CLI adapter:** invoke Monokl's stable JSON/agent output interface; cache
-   no opaque Monokl internals in Wisp.
-2. **Library adapter:** once Monokl publishes a stable public Rust API, embed
-   it in `wisp-monokl` and exchange typed records directly.
-3. **Shared workspace service:** a Wisp service can own one Monokl workspace
-   session, keeping Monokl's in-memory parse/cache and workspace index warm.
+These phases enrich an already useful artifact-only handoff. Monokl's library/session API is not a prerequisite for that pilot. A code-backed phase requires a real, compatibility-tested provider interface; a document describing an API does not establish that it is implemented.
 
-At all phases, Monokl remains responsible for invalidating code facts on source
-content changes. Wisp invalidates only its derived records that depend on those
-facts.
+1. **CLI adapter:** invoke Monokl's stable JSON/agent output interface; cache no opaque Monokl internals in Wisp.
+2. **Library adapter:** once Monokl publishes a stable public Rust API, embed it in `wisp-monokl` and exchange typed records directly.
+3. **Shared workspace service:** a Wisp service can own one Monokl workspace session, keeping Monokl's in-memory parse/cache and workspace index warm.
+
+At all phases, Monokl remains responsible for invalidating code facts on source content changes. Wisp invalidates only its derived records that depend on those facts.
 
 ### Precision is carried through
 
-Every code-backed Wisp claim includes Monokl's capability/precision and
-provenance. For example, an impact edge based on an exact TypeScript resolver
-is materially different from one derived from a structural Rust module-path
-walk or a heuristic fallback. Wisp must never silently upgrade the confidence
-of a code relationship.
+Every code-backed Wisp claim includes Monokl's capability/precision and provenance. For example, an impact edge based on an exact TypeScript resolver is materially different from one derived from a structural Rust module-path walk or a heuristic fallback. Wisp must never silently upgrade the confidence of a code relationship.
+
+Precision and resolution are different axes. Wisp preserves Monokl's `resolved`, `ambiguous`, `unresolved`, and `external` outcomes, including every ambiguous candidate and the diagnostic/reason that explains a non-resolved result. It may rank candidates for briefing inclusion, but it must not serialize the highest-ranked candidate as if Monokl resolved it. A stored code-evidence pointer also records the producing operation, analyzer/backend version and configuration digest, input content digest, workspace fingerprint, and scope completeness.
 
 ## Artifact model and persistence
 
 ### Canonical artifacts
 
-The initial target contracts are the plugin ecosystem's versioned JSON schemas:
+The current registry embeds five contracts: `requirement@1`, `research-report@1`, `spec@1`, `plan@1`, and `arch-model@1`. `schemas/PROVENANCE.md` records their upstream revision and checksums. The CLI currently writes only `spec@1`.
+
+Additional target contracts below are future integration candidates, not claims of current support; select their actual upstream versions when adding a consumer:
 
 - `requirement@1`
 - `research-report@1`
@@ -129,15 +122,13 @@ The initial target contracts are the plugin ecosystem's versioned JSON schemas:
 - `finding-report@1`
 - `changeset@2` and `release-artifact@2` where relevant
 
-Schemas must be immutable by version. Wisp needs a pinned schema registry: a
-published `orin-contracts` package or a vendored, checksummed schema bundle is
-an explicit prerequisite. It must not silently read a mutable schema file from
-an unrelated checkout and call it `@1`.
+Schemas must be immutable by version. Wisp needs a pinned schema registry: a published `orin-contracts` package or a vendored, checksummed schema bundle is an explicit prerequisite. It must not silently read a mutable schema file from an unrelated checkout and call it `@1`.
 
 ### Persist operation
 
-An artifact producer creates a candidate JSON document. Wisp then performs the
-durable mechanics:
+Current spec persistence validates, sets the canonical relative path, writes atomically, and returns a SHA-256 receipt with local Git-state classification. It does not create commits, approve artifacts, or invalidate a derived database. The broader sequence and receipt below are future design examples, not current CLI behavior. A commit-capable operation would need an explicit policy and owner authorization.
+
+An artifact producer creates a candidate JSON document. Wisp then performs the durable mechanics:
 
 ```text
 candidate JSON
@@ -166,16 +157,11 @@ Example receipt:
 }
 ```
 
-The operation must distinguish `validated`, `written_uncommitted`, `persisted`,
-and `commit_failed`. It cannot claim `persisted` when Git commit failed.
+The operation must distinguish `validated`, `written_uncommitted`, `persisted`, and `commit_failed`. It cannot claim `persisted` when Git commit failed.
 
 ### Direct-artifact fallback
 
-Wisp is preferred but optional. Plugins retain documented direct JSON behavior:
-they can read a path from `spec_file_path`/`plan_file_path`, validate against a
-bundled schema, and record a capability/freshness gap if Wisp is not available.
-This preserves cross-harness interoperability and allows adoption one workspace
-at a time.
+Wisp is preferred but optional. Plugins retain documented direct JSON behavior: they can read a path from `spec_file_path`/`plan_file_path`, validate against a bundled schema, and record a capability/freshness gap if Wisp is not available. This preserves cross-harness interoperability and allows adoption one workspace at a time.
 
 ## Cache and store design
 
@@ -206,7 +192,11 @@ Everything in `.wisp/` is rebuildable. Canonical artifacts remain outside it.
 | `briefs` | cache key, bounded payload, source pointers, truncation record | every input hash + request |
 | FTS virtual tables | selected docs/artifacts and metadata | document raw hash + tokenizer config |
 
+`code_evidence_refs` and `impact_edges` store a typed resolution outcome plus the existing `Provenance.agent` and `Provenance.activity` identities; Wisp does not invent a second “resolution origin” vocabulary. A full ambiguous candidate set remains in the typed record; summaries and telemetry may carry only status, analyzer/operation identity, and candidate count when identities are unnecessary. Historical co-change or ownership signals, if enabled later, live in a distinct evidence family and never become import/dependency edges.
+
 ### Cache keys
+
+There is no cache in the MVP. When caching is introduced, include selection dependencies as well as returned-item digests: adding a new matching file can invalidate a query even when every previously returned file is unchanged. A workspace-wide fingerprint and selective invalidation are different policies; their trade-off must be decided and tested before claiming unrelated changes preserve cache hits.
 
 A briefing key includes at least:
 
@@ -219,26 +209,19 @@ workspace canonical root
 + requested stage, selected task, detail/budget options
 ```
 
-When one element changes, Wisp must discard or recompute the dependent result.
-It must not use filesystem modification time as the authoritative identity of a
-canonical artifact or source file.
+When one element changes, Wisp must discard or recompute the dependent result. It must not use filesystem modification time as the authoritative identity of a canonical artifact or source file.
 
 ### Multi-process safety
 
-SQLite allows many readers but only one writer. The preferred daemon mode is
-one workspace-scoped Wisp service owning write coordination and a warm Monokl
-session. CLI clients may attach to it or run one-shot read-only/rebuild work.
+SQLite allows many readers but only one writer. The preferred daemon mode is one workspace-scoped Wisp service owning write coordination and a warm Monokl session. CLI clients may attach to it or run one-shot read-only/rebuild work.
 
-If multiple Wisp processes are allowed to write, they need an explicit
-inter-process lock and transaction/retry contract. A Rust `Mutex` alone is not
-enough. Likewise, Wisp must not directly write Monokl's cache; it asks Monokl
-to manage its own cache lifecycle.
+If multiple Wisp processes are allowed to write, they need an explicit inter-process lock and transaction/retry contract. A Rust `Mutex` alone is not enough. Likewise, Wisp must not directly write Monokl's cache; it asks Monokl to manage its own cache lifecycle.
+
+A derived-state refresh has one publication boundary. When the complete replacement fits in one SQLite transaction, commit that transaction atomically and add no generation machinery. If a service refresh must span multiple transactions or coordinate SQLite with materialized caches, stage it under a monotonically increasing generation and advance `last_complete_generation` only after every required component is durable. Readers select the last complete generation and therefore observe either the prior complete state or the replacement complete state, never a mixture.
 
 ## Semantic retrieval and vectors
 
-SQLite FTS is the first document retrieval mechanism. An optional later
-`wisp-semantic` capability may add embeddings for prose queries such as
-"where did we decide tenant isolation rules?".
+SQLite FTS is the first document retrieval mechanism. An optional later `wisp-semantic` capability may add embeddings for prose queries such as "where did we decide tenant isolation rules?".
 
 Vector rows must carry:
 
@@ -247,14 +230,13 @@ Vector rows must carry:
 - embedding model/provider/chunking version;
 - an opt-in privacy configuration.
 
-Vector retrieval returns `candidates`. Wisp then reads the current canonical
-source and reports it as evidence or rejects it as stale. It must never answer
-"the architecture says X" solely because a vector nearest-neighbor result did.
+Vector retrieval returns `candidates`. Wisp then reads the current canonical source and reports it as evidence or rejects it as stale. It must never answer "the architecture says X" solely because a vector nearest-neighbor result did.
 
-No embeddings are needed for code retrieval: Monokl's lexical and structural
-signals are the primary code path.
+No embeddings are needed for code retrieval: Monokl's lexical and structural signals are the primary code path.
 
 ## Context compiler
+
+The first operation selects explicit plan tasks and exact criteria without ranking, model summarization, code facts, or persistent derived state. Its proposed wire contract, scope, and error behavior live in the [MVP brief](05-implementation-handoff-mvp.md). The richer sections below belong to later evidence providers.
 
 ### Briefing contract
 
@@ -266,7 +248,7 @@ signals are the primary code path.
 | Governing artifacts | spec/plan/requirement/decision pointers and verified hashes |
 | Criteria | only acceptance criteria relevant to the requested task |
 | Architecture | applicable invariants, canonical abstractions, boundary rules |
-| Code evidence | Monokl symbols, definitions, references, tests, precision/provenance |
+| Code evidence | Monokl symbols, definitions, captured/resolved references, tests, resolution status/candidates, precision/provenance |
 | Git evidence | current changes, relevant commits/diff scope, staleness warnings |
 | Risks/gaps | absent artifact, stale plan, missing model coverage, unsupported language |
 | Next actions | bounded, deterministic follow-up queries—not autonomous instructions |
@@ -276,32 +258,34 @@ signals are the primary code path.
 
 1. Include required governing artifacts before optional supporting context.
 2. Prefer exact, current evidence over broad or low-precision evidence.
-3. Select files/symbols by explicit artifact link, task file declaration,
-   Monokl impact evidence, and Git delta—not semantic similarity alone.
+3. Select files/symbols by explicit artifact link, task file declaration, Monokl impact evidence, and Git delta—not semantic similarity alone.
 4. Include tests that prove selected criteria before unrelated test inventory.
 5. Enforce a budget and expose truncation; do not silently omit evidence.
 6. Never include raw chain-of-thought or private session content in a briefing.
+7. Treat Git co-change and ownership as advisory ranking/risk signals only. Keep each signal's kind, basis, window, and provenance visible; never use history as proof of a code dependency.
 
 ## CLI contract
 
-The CLI is the first stable integration surface. Every automation-capable
-command supports `--format json`; text/TOON are presentation modes.
+The CLI is the first integration surface. Current successes are JSON; `--format json` and `--format human` select error presentation. JSON stdout and nonzero failure exits are the machine boundary. Do not advertise future commands as installed capabilities.
 
-Illustrative commands:
+Current spec-only commands:
 
 ```bash
-wisp artifact validate --input candidate.json --type spec@1 --format json
-wisp artifact persist --input candidate.json --type spec@1 --commit --format json
-wisp artifact get SPEC-021 --format json
-wisp status --workspace . --format json
-wisp brief implement --plan PLAN-014 --task T2 --format json
-wisp impact --paths src/retry/policy.rs --format json
-wisp verify workflow --scenario claude-spec_codex-plan --format json
+wisp artifact validate candidate.json
+wisp artifact persist candidate.json --workspace .
+wisp artifact get SPEC-021 --workspace .
+wisp artifact status SPEC-021 --workspace .
 ```
 
-CLI JSON must be deterministic enough for snapshot/fixture tests. Human output
-uses `miette` diagnostics and, where appropriate, Michi rendering only after
-the typed operation completes.
+Proposed pilot command (not implemented):
+
+```bash
+wisp brief implement --workspace . --plan docs/projects/SPEC-001.json --batch B1
+```
+
+Impact queries, workflow verification commands, and text/TOON success rendering are later capabilities.
+
+CLI JSON must be deterministic enough for snapshot/fixture tests. Human output uses `miette` diagnostics and, where appropriate, Michi rendering only after the typed operation completes.
 
 ## MCP contract
 
@@ -318,25 +302,18 @@ Initial tools:
 | `wisp_status` | workflow/freshness status | no |
 | `wisp_verify` | fixture/contract verification | no |
 
-Initial resources may expose read-only canonical artifact URIs, e.g.
-`wisp://workspace/<id>/artifact/SPEC-021` and a current status resource. The
-MCP result should contain both:
+Initial resources may expose read-only canonical artifact URIs, e.g. `wisp://workspace/<id>/artifact/SPEC-021` and a current status resource. The MCP result should contain both:
 
-- compact agent-facing content (TOON/KV/hints through Michi where appropriate);
-  and
+- compact agent-facing content (TOON/KV/hints through Michi where appropriate); and
 - complete typed `structuredContent` matching the library result.
 
-TOON is appropriate for uniform candidate lists such as symbols, files,
-criteria, findings, and affected artifacts. It is not a replacement for a
-canonical JSON artifact or a mutation payload.
+TOON is appropriate for uniform candidate lists such as symbols, files, criteria, findings, and affected artifacts. It is not a replacement for a canonical JSON artifact or a mutation payload.
 
 ## Michi integration
 
-Wisp's domain operations produce types, not strings. During coordinated local
-development, `wisp-output` may use Michi through an explicit local path
-dependency. Wisp is not published while that dependency exists; publication is
-gated on Michi releasing a compatible, versioned package. CLI JSON remains the
-portable contract even when Michi is available.
+The artifact-only pilot has no Michi dependency. D-029 proposes narrowing the existing publication restriction to builds/features that actually depend on Michi; it does not authorize publishing Wisp or silently amend D-006. Until that proposal is accepted, D-006 remains the recorded release restriction.
+
+Wisp's domain operations produce types, not strings. During coordinated local development, `wisp-output` may use Michi through an explicit local path dependency. Wisp is not published while that dependency exists; publication is gated on Michi releasing a compatible, versioned package. CLI JSON remains the portable contract even when Michi is available.
 
 `wisp-output` uses Michi as an optional edge adapter for:
 
@@ -346,36 +323,26 @@ portable contract even when Michi is available.
 - recovery hints and structured errors;
 - MCP `CallToolResult` assembly with non-duplicated structured content.
 
-Wisp must never parse its own TOON output. The model, CLI, and MCP layers all
-operate from the same typed result before rendering. MCP `structuredContent`
-and CLI JSON remain the portable output contract.
+Wisp must never parse its own TOON output. The model, CLI, and MCP layers all operate from the same typed result before rendering. MCP `structuredContent` and CLI JSON remain the portable output contract.
 
 ## Other ecosystem integration
 
 ### Callisto
 
-Callisto provides strong patterns for native `gix` operations, typed report
-contracts, graph work, and crash-safe atomic writes. `callisto-vcs` may be
-reused or used as a reference after verifying its public API and license fit.
-Wisp should not couple to release planning; Callisto remains the release engine.
+Callisto supplies useful design precedents for capability-gated writes, validated intent, typed provider observations, constrained transitions, and receipts derived from observed outcomes. Current Callisto Git access uses subprocesses through `CommandRunner`; do not assume an existing native `gix` adapter or standalone `callisto-vcs` crate. Wisp may evaluate its own Git backend later. Reuse code only after checking API and license fit; Callisto remains the release engine.
 
 ### Lumen
 
-Lumen can measure whether Wisp improves agent behavior: context size, cache
-affinity, tool-loop cycles, retries, and cost. Wisp may emit sanitized tracing
-events that Lumen can correlate, but transcript logs must not enter Wisp's
-canonical project knowledge without explicit user consent and a separate
-provenance class.
+Wisp/Monokl telemetry ingestion is a target integration. The MVP records experiment evidence directly; it does not require a Lumen daemon, lifecycle hook, or new ingestion adapter. Future tool events annotate a harness session rather than masquerading as agent turns, and distinguish observed measurements from derived or modeled savings.
+
+Lumen can measure whether Wisp improves agent behavior: context size, cache affinity, tool-loop cycles, retries, and cost. Wisp may emit sanitized tracing events that Lumen can correlate, but transcript logs must not enter Wisp's canonical project knowledge without explicit user consent and a separate provenance class.
 
 ### Prism
 
-Prism is the quality gate for Wisp's value proposition. It should run paired
-experiments: direct artifact/filesystem baseline versus Wisp briefing, across
-the same repository tasks and multiple harnesses. Measure correctness,
-evidence completeness, stale-context errors, latency, tokens, and cost.
+Prism's current test command uses a synthetic transcript, its benchmark prints fixed results, and its Red/Green grader checks only the final test run. These are not evidence of Wisp's value. Use a real repository-native fixture runner first, or repair the narrow Prism execution path; do not block the MVP on a full evaluation-platform build. Missing required checks, driver failures, and timeouts are not passes.
+
+Prism is the quality gate for Wisp's value proposition. It should run paired experiments: direct artifact/filesystem baseline versus Wisp briefing, across the same repository tasks and multiple harnesses. Measure correctness, evidence completeness, stale-context errors, latency, tokens, and cost.
 
 ### oxc-react-docgen
 
-This is an optional domain adapter. In React-heavy workspaces it can supply
-component/prop documentation facts to Wisp, with its own source hash and
-diagnostics. It is not a general code intelligence substitute for Monokl.
+This is an optional domain adapter. In React-heavy workspaces it can supply component/prop documentation facts to Wisp, with its own source hash and diagnostics. It is not a general code intelligence substitute for Monokl.
