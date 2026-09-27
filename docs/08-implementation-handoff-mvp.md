@@ -4,7 +4,7 @@
 
 ## Outcome
 
-Given a persisted plan and an explicit batch or task selection, Wisp verifies the governing spec relationship and returns exact implementation context with source digests and explicit gaps. Smith retains code inspection, implementation, review, and independent verification.
+Given a persisted plan and an explicit batch or task selection, Wisp verifies the governing spec relationship and returns exact implementation context with source digests and explicit gaps. Smith retains code inspection, implementation, review, and independent verification. This pilot uses a distinct `wisp handoff implement` command; the existing architecture reserves `wisp brief implement` for the later code-aware M3 briefing.
 
 The first value claim is removal of duplicated mechanical preparation and detection of known handoff inconsistencies. Reduced session cost, fewer parses, and better implementation outcomes are hypotheses to measure, not established benefits.
 
@@ -35,7 +35,7 @@ Wisp does not establish that a plan was approved, that prerequisites finished, t
 ## Proposed invocation
 
 ```bash
-wisp brief implement --workspace . --plan docs/projects/SPEC-001.json --batch B1
+wisp handoff implement --workspace . --plan docs/projects/SPEC-001.json --batch B1
 ```
 
 This command is not implemented. `--plan` is a workspace-relative path, not an inferred plan ID. Require exactly one selector: `--batch` for a declared batch or `--task` for a task in a plan without batch grouping. Preserve the plan's order; do not infer a new batch or scheduler.

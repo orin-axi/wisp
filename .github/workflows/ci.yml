@@ -10,10 +10,6 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  CARGO_INCREMENTAL: "0"
-  CARGO_TERM_COLOR: always
-
 jobs:
   ci:
     runs-on: ubuntu-latest
@@ -23,23 +19,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install Rust toolchain & cache (matches rust-toolchain.toml's pin)
-        uses: orin-dx/actions/setup-rust@v1.1
-        with:
-          components: clippy,rustfmt
-
-      - name: Setup moon toolchain
-        uses: moonrepo/setup-toolchain@v0
-
-      # just and cargo-deny have no working proto plugin; install them directly.
-      # Same arrangement as Lumen and Michi.
       - name: Install just
         uses: extractions/setup-just@v2
-
-      - name: Install cargo-deny
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-deny
 
       - name: Install ripgrep (used by just docs-lint)
         run: sudo apt-get update -q && sudo apt-get install -y -q ripgrep

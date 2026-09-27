@@ -1,16 +1,43 @@
 # Wisp
 
-- **Status:** early implementation in the working tree; release readiness has not been established.
-- **Purpose:** local-first project intelligence for coding agents and humans.
+**Local-first project intelligence for coding agents and humans.**
 
-Wisp makes a repository's durable project knowledge usable without relying on a conversation's context window. It joins four kinds of evidence:
+*Makes a repository's durable project knowledge usable without relying on a conversation's context window.*
 
-1. canonical, Git-tracked work artifacts such as specifications, plans, architecture models, and decisions;
-2. current repository and historical evidence from Git;
-3. structural code evidence supplied by [Monokl](../monokl/README.md); and
-4. an explicitly rebuildable local index and briefing cache.
+**Status:** documentation and repository setup are tracked; the local WISP-001 Rust slice is uncommitted and not published.
+
+---
+
+## What it does
+
+Wisp joins four kinds of evidence into one bounded, cited answer:
+
+| Evidence | Source |
+| :--- | :--- |
+| Canonical work artifacts | Git-tracked specifications, plans, architecture models, decisions |
+| Repository state and history | Git worktree and commit evidence |
+| Structural code evidence | [Monokl](../monokl/README.md) |
+| Derived acceleration | an explicitly rebuildable local index and briefing cache |
 
 Wisp is not an agent runtime, a replacement for Git, a code parser, or an opaque "AI memory" product. It is a library with a CLI first and an MCP server as a thin later surface. Its job is to answer evidence-backed project questions and prepare a small, relevant context package for a particular stage of work.
+
+## Local implementation, not in this PR stack
+
+The uncommitted WISP-001 slice covers portable `spec@1` JSON artifacts. These commands are not available from a fresh checkout of this PR stack. Its success and failure responses are one JSON object on standard output.
+
+```text
+wisp artifact validate <candidate.json|->
+wisp artifact persist <candidate.json|-> --workspace <workspace>
+wisp artifact get <SPEC-ID> --workspace <workspace>
+wisp artifact status <SPEC-ID> --workspace <workspace>
+```
+
+- **`persist`** — validates before it writes, adds the canonical `spec_file_path`, and atomically writes only `docs/specs/<SPEC-ID>.json`. Reports a `sha256:` hash over the final file bytes and never commits Git changes.
+- **`get`** — revalidates the stored JSON.
+- **`status`** — reports `absent`, `uncommitted`, or `clean` without implying that a commit was made.
+- **Errors** — JSON by default for harnesses and automation; `--format human` renders a structured `miette` diagnostic on standard error during interactive work.
+
+Monokl integration, derived storage, vector search, Michi rendering, and MCP remain intentionally out of this first slice.
 
 ## The central rule
 
@@ -26,53 +53,62 @@ Git-tracked artifacts + Git state + Monokl code evidence
              CLI / MCP evidence-backed response
 ```
 
-If `.wisp/` is deleted, Wisp must be able to reconstruct it from the workspace. If Wisp is absent, a harness must still be able to read the documented JSON artifacts directly and carry out the portable baseline workflow.
+- If `.wisp/` is deleted, Wisp must be able to reconstruct it from the workspace.
+- If Wisp is absent, a harness must still be able to read the documented JSON artifacts directly and carry out the portable baseline workflow.
 
-## Repository reading order
+## Next bounded pilot (proposed)
 
-Start with [Implementation handoff MVP](docs/05-implementation-handoff-mvp.md) for the next bounded slice, its failure cases, and the evidence required before expanding it. This is a planning draft, not a gated specification or plan.
+[Implementation handoff MVP](docs/08-implementation-handoff-mvp.md) proposes a read-only, artifact-only `wisp handoff implement` operation. It checks one selected plan/spec chain and returns exact tasks, criteria, source digests, and gaps. It does not implement the broader context compiler, grant approval, or query Monokl. The brief is not a gated spec or an implemented command.
 
-1. [Vision and boundaries](docs/01-vision-and-boundaries.md)
-2. [Architecture and contracts](docs/02-architecture-and-contracts.md)
-3. [Delivery plan and acceptance gates](docs/03-delivery-plan.md)
-4. [Decision log and open questions](docs/04-decisions-and-open-questions.md)
-
-## Available in the working tree
-
-The CLI implements these spec-only commands; they are not a claim that the acceptance gates have passed:
-
-The foundation source and schema registry are currently uncommitted local work. A fresh checkout of this documentation alone cannot run these commands; land and verify the foundation separately before relying on them.
-
-```bash
-cargo run -p wisp-cli -- artifact validate fixtures/spec-valid.json
-cargo run -p wisp-cli -- artifact persist candidate.json --workspace .
-cargo run -p wisp-cli -- artifact get WISP-001 --workspace .
-cargo run -p wisp-cli -- artifact status WISP-001 --workspace .
-```
-
-`persist` writes a canonical spec but does not commit it. The schema library embeds five pinned artifact contracts, and the artifact library has read-only discovery and one-hop context assembly. Task-specific preflight, bounded implementation packets, code evidence, SQLite, MCP, and service mode remain planned.
-
-## The next integration (proposed)
+## Later briefing experience
 
 ```text
 Claude / Codex / OpenCode / a human
               │
               ▼
-      wisp brief implement --workspace . --plan docs/projects/SPEC-001.json --batch B1
+      wisp brief implement --plan PLAN-014
               │
               ▼
-  checked plan/spec relationship + exact selected tasks/criteria
-  + source digests + explicit gaps
+  small, cited package: plan + spec + relevant invariants
+  + affected symbols/tests + current Git delta + next actions
 ```
 
-This command is proposed, not implemented. The first integration is read-only and cache-free. It does not run tests, choose batches, grant approval, or query Monokl. Smith inspects current code and performs implementation and verification. MCP and compact rendering follow only after the CLI handoff proves useful.
+The full `wisp brief implement` flow above is a later M3 target with code evidence and budgeting; it is not the pilot command. It may eventually be exposed as an MCP tool such as `wisp_brief`. CLI JSON remains the portable contract; TOON/KV is presentation, not storage.
+
+## Reading order
+
+| # | Document | Covers |
+| :--- | :--- | :--- |
+| 1 | [Vision and boundaries](docs/01-vision-and-boundaries.md) | What Wisp is and is not |
+| 2 | [Architecture and contracts](docs/02-architecture-and-contracts.md) | The full contract: crates, evidence model, persistence, MCP |
+| 3 | [Delivery plan and acceptance gates](docs/03-delivery-plan.md) | Milestones 0–6 and what closes each |
+| 4 | [Decision log and open questions](docs/04-decisions-and-open-questions.md) | Accepted D-001 through D-027; proposed D-028 through D-033 |
+| 5 | [Ten-phase build sequence](docs/05-ten-phase-build-plan.md) | Codex's finer-grained ordering within the milestones above |
+| 6 | [Research brief](docs/06-research-brief.md) | The prior art and papers behind D-009 through D-021 |
+| 7 | [Build and release](docs/07-build-and-release.md) | How six separate repositories resolve, build, and publish in dependency order |
+| 8 | [Implementation handoff MVP](docs/08-implementation-handoff-mvp.md) | Proposed artifact-only pilot and its failure cases |
+
+| Also | Covers |
+| :--- | :--- |
+| [`docs/spec/wisp-contracts/01-contracts.md`](docs/spec/wisp-contracts/01-contracts.md) | `crates/wisp-contracts`, a workspace member published from this repository: every shared type, its wire form, and its stability policy (D-027) |
+| [`ARCHITECTURE.md`](ARCHITECTURE.md) | Crate status and current gaps |
+| [`PRINCIPLES.md`](PRINCIPLES.md) | What belongs here |
+| [`AGENTS.md`](AGENTS.md) | Commands and non-negotiables for agents |
+| [`docs/spec/WISP-001/00-overview.md`](docs/spec/WISP-001/00-overview.md) | The active implementation unit |
 
 ## Related projects
 
-- **Monokl** supplies AST-aware code evidence, code search, symbols, definitions, references, and precision metadata. Wisp must not duplicate its parser, AST cache, or code index.
-- **Michi** is a future optional presentation adapter. The MVP has no Michi dependency; proposed decision D-029 narrows its release gate to features that use it.
-- **Callisto** offers precedents for authorized effects, typed observations, receipts, and crash-safe writes. Its current Git access uses subprocesses; no standalone `callisto-vcs` dependency is assumed. Check API and license compatibility before code reuse.
-- **Lumen** observes agent sessions, cache use, and retrieval loops. It is an evaluation/telemetry companion, never project truth.
-- **Prism** evaluates whether Wisp context actually improves task success, correctness, latency, and cost across harnesses.
+| Project | Role | Boundary |
+| :--- | :--- | :--- |
+| **Monokl** | AST-aware code evidence: code search, symbols, definitions, references, precision metadata | Wisp must not duplicate its parser, AST cache, or code index |
+| **Michi** | Token-efficient agent output: TOON, KV, hints, MCP result assembly, truncation | `git` + `rev` dependency during coordinated development (D-024). The pilot has no Michi dependency; D-029 proposes narrowing D-006's current publication gate, but does not change it yet. |
+| **Callisto** | Precedents for capability-gated writes and outcome-based receipts | Its current Git access uses subprocesses; check API and license compatibility before code reuse |
+| **Lumen** | Observes agent sessions, cache use, and retrieval loops | An evaluation/telemetry companion, never project truth |
+| **Prism** | Evaluates whether Wisp context improves task success, correctness, latency, and cost across harnesses | The quality gate, not a source of project state |
+| **Wisp Plugins** (`agent-plugins`) | The agent ecosystem: source of the versioned artifact schemas Wisp validates and of its spec/plan review workflows | Schemas are vendored into Wisp at a pinned revision with a checksum, never read from a mutable sibling checkout (D-010) |
 
 See [Architecture and contracts](docs/02-architecture-and-contracts.md) for the precise boundaries.
+
+## License
+
+`wisp-contracts` and `wisp-model` are `MIT`, so a third-party harness plugin can embed the interchange types with no further obligation. Every other crate is `FSL-1.1-MIT`, which converts to MIT two years after each release. Michi and Monokl are `FSL-1.1-MIT` as well, so the suite links without conflict. D-021 records why.

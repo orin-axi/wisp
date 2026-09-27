@@ -8,26 +8,23 @@ Contributions are welcome. This guide covers the development environment, the in
 
 ### Prerequisites
 
-- **Toolchain via proto**: `.prototools` pins Rust, moon, just, and cargo-deny. Run `proto use` once.
-- **Rust**: 1.96, edition 2024, pinned in `rust-toolchain.toml`.
-- **Preferred CLI tools**: `rg`, `fd`, `eza`, `bat`.
+- **Docs checks**: install `just` and `rg`.
+- **Rust**: the local WISP-001 slice uses Rust 1.96 and edition 2024, but its workspace and toolchain pin are not tracked on this branch.
 
 ### Build and test
 
-There is no `justfile` or `docs-lint` recipe in the current working tree. Use the available Cargo commands; the commands described by WISP-001 and CI remain implementation work, not a functioning local entry point.
-
 ```bash
-cargo fmt --all --check
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace
-cargo doc --workspace --no-deps
+just            # current docs-only CI check
+just docs-lint  # Markdown house style, fences, decision references, stale names
 ```
 
-For one crate use `cargo test -p <crate>` or `cargo clippy -p <crate>` directly, not `moon run <project>:test` — moon's per-project fan-out serializes on the shared `target/` build lock.
+For local untracked Rust work, run Cargo checks directly. Add the workspace and its checks together when WISP-001 is committed; a passing docs check does not validate code.
 
 ### Before opening a PR
 
-CI currently invokes `just ci`, but its recipe file is absent. Restore and verify that task surface under WISP-001 before claiming CI parity. Run the available checks and report blocked checks explicitly.
+CI runs `just ci`. Run it locally first; it currently checks tracked documentation only.
+
+The [implementation handoff MVP](./docs/08-implementation-handoff-mvp.md) is a planning draft. It neither gates WISP-001 nor changes the broader M3 briefing contract. New Rust source needs its own checks in CI when committed.
 
 ---
 
@@ -35,13 +32,13 @@ CI currently invokes `just ci`, but its recipe file is absent. Restore and verif
 
 1. **Safe Rust only.** `unsafe_code = "forbid"`, `unwrap_used`/`expect_used` deny — workspace lints, every crate, no exceptions in library code.
 2. **Atomic writes only.** Every canonical artifact write is a same-directory tempfile plus rename. Never write a canonical target in place.
-3. **The cache is never the authority.** Nothing under `.wisp/` may be the only copy of a governing fact. See [Vision and boundaries](docs/01-vision-and-boundaries.md).
+3. **The cache is never the authority.** Nothing under `.wisp/` may be the only copy of a fact. See [`PRINCIPLES.md`](./PRINCIPLES.md).
 4. **Implement only what the current gated plan's `covers_criteria` requires.** A spec's `non_goals` are binding. If a task needs scope the spec excludes, stop and raise it.
-5. **Spec and plan both gate before implementation.** Preserve review evidence and owner authorization; schema validity, a commit, or this planning brief does not imply approval. Do not assume an obsolete verdict version or invent an approval receipt.
-6. **Permissive core stays permissive.** `wisp-model` must not depend on a restrictively licensed domain crate, Tokio, MCP types, Monokl types, SQLite, or CLI formatting. A separate `wisp-contracts` crate is not implemented or required by the pilot.
-7. **Docs are unwrapped and unpadded.** One paragraph per source line, no emoji, no filler. A docs-lint recipe is not yet available; inspect this rule directly until one exists.
+5. **Spec and plan both gate before implementation.** Use `scribe:gate-spec` for the spec, `navigator:plan` to challenge the plan, and `sentinel:gate` for an independent plan verdict. Keep the `verdict@3` evidence; an unrecorded pass is unverified.
+6. **Permissive core stays permissive.** `wisp-contracts` and `wisp-model` are `MIT` and must not depend on any `FSL-1.1-MIT` crate, Tokio, MCP types, Monokl types, SQLite, or CLI formatting.
+7. **Docs are unwrapped and unpadded.** One paragraph per line, no emoji, no filler. `just docs-lint` enforces the mechanical part.
 
-There is no root `AGENTS.md` in this checkout. Use the existing [architecture boundaries](docs/02-architecture-and-contracts.md), [decision log](docs/04-decisions-and-open-questions.md), and [MVP brief](docs/05-implementation-handoff-mvp.md); do not mistake a missing instruction file for an implemented enforcement mechanism.
+The full list, with the reasons, is in [`AGENTS.md`](./AGENTS.md).
 
 ---
 
@@ -49,6 +46,6 @@ There is no root `AGENTS.md` in this checkout. Use the existing [architecture bo
 
 1. **Branch** with a descriptive name: `feat/…`, `fix/…`, `docs/…`, `chore/…`.
 2. **Tests prove criteria.** Every task's tests name the acceptance criteria they cover; mutation testing (`cargo-mutants`) checks the tests would catch real faults.
-3. **Verify locally** with the available Cargo checks. Once `just ci` exists and has been verified, use it for CI parity.
+3. **Verify locally** with `just ci` and any checks needed for changed code. Expand CI when that code enters the repository.
 4. **Conventional commits**: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`. The message explains why; the diff already shows what.
-5. **Cross-repo dependencies** are absent from the pilot. If a later feature adds one, record an immutable source or compatible release and keep local overrides out of published builds. The proposed Michi release-gate change is D-029; no `docs/07-build-and-release.md` exists yet.
+5. **Cross-repo dependencies** on Monokl and Michi are `git` + `rev` in committed manifests. A local `[patch]` for path development lives in gitignored `.cargo/config.toml` and never in a commit — see [`docs/07-build-and-release.md`](./docs/07-build-and-release.md).
