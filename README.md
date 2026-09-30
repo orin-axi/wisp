@@ -1,4 +1,9 @@
-# Wisp
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/brand/hero-dark.png">
+    <img src="assets/brand/hero-light.png" alt="wisp, an Orin DX tool" width="360">
+  </picture>
+</p>
 
 **Local-first project intelligence for coding agents and humans.**
 
